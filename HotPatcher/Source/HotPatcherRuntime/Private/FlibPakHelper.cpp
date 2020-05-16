@@ -35,7 +35,7 @@ bool UFlibPakHelper::MountPak(const FString& PakPath, int32 PakOrder, const FStr
 		bool bIsEmptyMountPoint = InMountPoint.IsEmpty();
 		const TCHAR* MountPoint = bIsEmptyMountPoint ? NULL : InMountPoint.GetCharArray().GetData();
 
-#if !WITH_EDITOR
+//#if !WITH_EDITOR
 		
 		if (PakFileMgr->Mount(*PakPath, PakOrder, MountPoint))
 		{
@@ -47,7 +47,7 @@ bool UFlibPakHelper::MountPak(const FString& PakPath, int32 PakOrder, const FStr
 			bMounted = false;
 		}
 
-#endif
+//#endif
 	}
 
 	return bMounted;

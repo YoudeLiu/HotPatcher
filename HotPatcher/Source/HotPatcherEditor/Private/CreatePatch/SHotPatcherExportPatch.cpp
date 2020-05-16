@@ -21,7 +21,11 @@
 #include "Misc/ScopedSlowTask.h"
 #include "HAL/FileManager.h"
 
+#if USE_PAKFILEUTILITIES_EX
+#include "PakFileUtilitiesEx.h"
+#else
 #include "PakFileUtilities.h"
+#endif
 
 #define LOCTEXT_NAMESPACE "SHotPatcherCreatePatch"
 
@@ -851,8 +855,8 @@ FReply SHotPatcherExportPatch::DoExportPatch()
 			// 创建chunk的pak文件
 			for (const auto& PakFileProxy : PakFileProxys)
 			{
-
-				FThread CurrentPakThread(*PakFileProxy.PakSavePath, [/*CurrentPakVersion, */PlatformName, UnrealPakOptions, ReplacePakCommandTexts, PakFileProxy, &Chunk, &PakFilesInfoMap]()
+				FString GeneratedPatchOptions = ExportPatchSetting->GetGeneratePatchCommands();
+				FThread CurrentPakThread(*PakFileProxy.PakSavePath, [/*CurrentPakVersion, */PlatformName, UnrealPakOptions, ReplacePakCommandTexts, PakFileProxy, &Chunk, &PakFilesInfoMap, GeneratedPatchOptions]()
 				{
 
 					bool PakCommandSaveStatus = FFileHelper::SaveStringArrayToFile(
@@ -875,7 +879,17 @@ FReply SHotPatcherExportPatch::DoExportPatch()
 						{
 							CommandLine.Append(FString::Printf(TEXT(" %s"), *Option));
 						}
+						
+						if (!GeneratedPatchOptions.IsEmpty())
+						{
+							UE_LOG(LogTemp, Log, TEXT("Generated Patch Options:%s"), *GeneratedPatchOptions);
+							CommandLine.Append(FString::Printf(TEXT(" %s"), *GeneratedPatchOptions));
+						}
+#if USE_PAKFILEUTILITIES_EX
+						ExecuteUnrealPakEx(*CommandLine);
+#else
 						ExecuteUnrealPak(*CommandLine);
+#endif
 						// FProcHandle ProcessHandle = UFlibPatchParserHelper::DoUnrealPak(UnrealPakOptionsSinglePak, true);
 
 						if (FPaths::FileExists(PakFileProxy.PakSavePath))

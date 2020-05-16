@@ -13,21 +13,26 @@
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"Installed": false,
-	"Modules": [
-		{
-			"Name": "HotPatcherRuntime",
-			"Type": "Runtime",
-			"LoadingPhase": "PreDefault"
-		},
-		{
-			"Name": "HotPatcherEditor",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "AssetManagerEx",
-			"Type": "Runtime",
-			"LoadingPhase": "PreDefault"
-		}
-	]
+  "Modules": [
+    {
+      "Name": "HotPatcherRuntime",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault"
+    },
+    {
+      "Name": "HotPatcherEditor",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "AssetManagerEx",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault"
+    },
+    {
+      "Name": "PakFileUtilitiesEx",
+      "Type": "Developer",
+      "LoadingPhase": "Default"
+    }
+  ]
 }

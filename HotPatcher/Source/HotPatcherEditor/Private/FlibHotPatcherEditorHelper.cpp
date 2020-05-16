@@ -92,6 +92,8 @@ UExportPatchSettings* UFlibHotPatcherEditorHelper::DeserializePatchConfig(UExpor
 		{
 			DESERIAL_BOOL_BY_NAME(InNewSetting, JsonObject, bByBaseVersion);
 			InNewSetting->BaseVersion.FilePath = JsonObject->GetStringField(TEXT("BaseVersion"));
+			InNewSetting->BaseVersionPaksDir.Path = JsonObject->GetStringField(TEXT("BaseVersionPaksDir"));
+
 			DESERIAL_STRING_BY_NAME(InNewSetting, JsonObject, VersionId);
 
 
@@ -286,6 +288,7 @@ bool UFlibHotPatcherEditorHelper::SerializePatchConfigToJsonObject(const UExport
 	}
 	OutJsonObject->SetStringField(TEXT("VersionId"), InPatchSetting->GetVersionId());
 	OutJsonObject->SetBoolField(TEXT("bByBaseVersion"), InPatchSetting->IsByBaseVersion());
+	OutJsonObject->SetStringField(TEXT("BaseVersionPaksDir"), InPatchSetting->GetBaseVersionPaksDir());
 	OutJsonObject->SetStringField(TEXT("BaseVersion"), InPatchSetting->GetBaseVersion());
 
 	auto SerializeArrayLambda = [&OutJsonObject](const TArray<FString>& InArray, const FString& InJsonArrayName)

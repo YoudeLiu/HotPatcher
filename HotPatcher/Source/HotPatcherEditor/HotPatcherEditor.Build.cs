@@ -30,13 +30,25 @@ public class HotPatcherEditor : ModuleRules
                 "TargetPlatform",
                 "PropertyEditor",
                 "AssetManagerEx",
-                "PakFileUtilities"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
-			
-		
-		PrivateDependencyModuleNames.AddRange(
+
+
+        bool bUsePakFileUtilitiesEx = true;
+        if(bUsePakFileUtilitiesEx)
+        {
+            PublicDependencyModuleNames.Add("PakFileUtilitiesEx");
+            
+        }
+        else
+        {
+            PublicDependencyModuleNames.Add("PakFileUtilities");
+        }
+        string UsePakFileUtilitiesExMacro = "USE_PAKFILEUTILITIES_EX=" + (bUsePakFileUtilitiesEx ? "1" : "0");
+        PublicDefinitions.Add(UsePakFileUtilitiesExMacro);
+
+        PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
                 "Core",

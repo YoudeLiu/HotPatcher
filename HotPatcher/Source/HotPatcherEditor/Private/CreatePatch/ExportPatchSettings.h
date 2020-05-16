@@ -14,6 +14,7 @@
 #include "FlibHotPatcherEditorHelper.h"
 
 // engine header
+#include "Kismet/KismetMathLibrary.h"
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 #include "UObject/Object.h"
@@ -90,6 +91,16 @@ public:
 
 	FORCEINLINE FString GetVersionId()const { return VersionId; }
 	FORCEINLINE FString GetBaseVersion()const { return BaseVersion.FilePath; }
+	FORCEINLINE FString GetBaseVersionPaksDir()const { return BaseVersionPaksDir.Path; }
+	FORCEINLINE FString GetGeneratePatchCommands()const {
+		FString Result;
+		FString AbsPath = FPaths::ConvertRelativePathToFull(GetBaseVersionPaksDir());
+		if(FPaths::DirectoryExists(AbsPath))
+		{
+			Result = FString::Printf(TEXT("-generatepatch=\"%s\" -tempfiles=%s_%d"), *FPaths::Combine(GetBaseVersionPaksDir(), TEXT("*.pak")), *GetBaseVersionPaksDir(), UKismetMathLibrary::RandomInteger(INT_MAX));
+		}
+		return Result;
+	}
 	FORCEINLINE TArray<FString> GetPakCommandOptions()const { return PakCommandOptions; }
 	FORCEINLINE TArray<FReplaceText> GetReplacePakCommandTexts()const { return ReplacePakCommandTexts; }
 	FORCEINLINE TArray<FString> GetUnrealPakOptions()const { return UnrealPakOptions; }
@@ -133,9 +144,11 @@ public:
 		bool bByBaseVersion = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "BaseVersion",meta = (RelativeToGameContentDir, EditCondition="bByBaseVersion"))
 		FFilePath BaseVersion;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseVersion")
+		FDirectoryPath BaseVersionPaksDir;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "PatchSettings")
 		FString VersionId;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "PatchSettings|Asset Filter",meta = (RelativeToGameContentDir, LongPackageName))
 		TArray<FDirectoryPath> AssetIncludeFilters;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PatchSettings|Asset Filter", meta = (RelativeToGameContentDir, LongPackageName))
