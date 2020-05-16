@@ -3335,7 +3335,7 @@ void ProcessLegacyFileMoves( TArray<FPakInputPair>& InDeleteRecords, TMap<FStrin
 }
 
 
-TArray<FPakInputPair> GetNewDeleteRecords( const TArray<FPakInputPair>& InFilesToPak, const TMap<FString, FFileInfo>& InExistingPackagedFileHashes)
+TArray<FPakInputPair> GetNewDeleteRecords( const TArray<FPakInputPair>& InFilesToPak, const TMap<FString, FFileInfo>& InExistingPackagedFileHashes,const TArray<FString>& InDeleteInPatch)
 {
 	double StartTime = FPlatformTime::Seconds();
 	TArray<FPakInputPair> DeleteRecords;
@@ -3361,7 +3361,7 @@ TArray<FPakInputPair> GetNewDeleteRecords( const TArray<FPakInputPair>& InFilesT
 		FString SourceFileName = Pair.Key;
 		bool bFound = FilesToPack.Contains(SourceFileName);
 
-		if (bFound == false)
+		if (bFound == false && InDeleteInPatch.Contains(TEXT("../../../") + SourceFileName))
 		{
 			//file cannot be found now, and was not deleted in the most recent pak patch
 			FPakInputPair DeleteRecord;
@@ -3468,7 +3468,7 @@ bool Repack(const FString& InputPakFile, const FString& OutputPakFile, const FPa
  * @param	ArgC	Command-line argument count
  * @param	ArgV	Argument strings
  */
-bool ExecuteUnrealPakEx(const TCHAR* CmdLine)
+bool ExecuteUnrealPakEx(const TCHAR* CmdLine, const TArray<FString>& InDeleteFiles)
 {
 	// Parse all the non-option arguments from the command line
 	TArray<FString> NonOptionArguments;
@@ -3833,7 +3833,8 @@ bool ExecuteUnrealPakEx(const TCHAR* CmdLine)
 		if ( CmdLineParameters.GeneratePatch )
 		{
 			// We need to get a list of files that were in the previous patch('s) Pak, but NOT in FilesToAdd
-			TArray<FPakInputPair> DeleteRecords = GetNewDeleteRecords(FilesToAdd, SourceFileHashes);
+			TArray<FPakInputPair> DeleteRecords = GetNewDeleteRecords(FilesToAdd, SourceFileHashes, InDeleteFiles);
+
 
 			//if the patch is built using old source pak files, we need to handle the special case where a file has been moved between chunks but no delete record was created (this would cause a rogue delete record to be created in the latest pak), and also a case where the file was moved between chunks and back again without being changed (this would cause the file to not be included in this chunk because the file would be considered unchanged)
 			if (LowestSourcePakVersion < FPakInfo::PakFile_Version_DeleteRecords)
@@ -3846,8 +3847,7 @@ bool ExecuteUnrealPakEx(const TCHAR* CmdLine)
 				//remove invalid items from DeleteRecords and set 'bForceInclude' on some SourceFileHashes
 				ProcessLegacyFileMoves(DeleteRecords, SourceFileHashes, SourcePakFolder, FilesToAdd, CurrentPatchChunkIndex, bSigned);
 			}
-			FilesToAdd.Append(DeleteRecords);
-
+			
 			// if we are generating a patch here we remove files which are already shipped...
 			RemoveIdenticalFiles(FilesToAdd, CmdLineParameters.SourcePatchDiffDirectory, SourceFileHashes, CmdLineParameters.PatchSeekOptMaxGapSize, CmdLineParameters.PatchSeekOptUseOrder);
 		}

@@ -451,8 +451,9 @@ bool SHotPatcherExportPatch::CanDiff()const
 		bool bHasVersionId = !ExportPatchSetting->GetVersionId().IsEmpty();
 		bool bHasFilter = !!ExportPatchSetting->GetAssetIncludeFiltersPaths().Num();
 		bool bHasSpecifyAssets = !!ExportPatchSetting->GetIncludeSpecifyAssets().Num();
+		bool bHasExternalFile = !!ExportPatchSetting->GetAllExternFiles().Num();
 
-		bCanDiff = bHasBase && bHasVersionId && (bHasFilter || bHasSpecifyAssets);
+		bCanDiff = bHasBase && bHasVersionId && (bHasFilter || bHasSpecifyAssets || bHasExternalFile);
 	}
 	return bCanDiff;
 }
@@ -490,7 +491,7 @@ FReply SHotPatcherExportPatch::DoDiff()const
 
 	FPatchVersionDiff VersionDiffInfo = UFlibPatchParserHelper::DiffPatchVersion(BaseVersion, CurrentVersion);
 
-	bool bShowDeleteAsset = false;
+	bool bShowDeleteAsset = true;
 
 	FString SerializeDiffInfo =
 		FString::Printf(
@@ -789,6 +790,27 @@ FReply SHotPatcherExportPatch::DoExportPatch()
 	FScopedSlowTask UnrealPakSlowTask(AmountOfWorkProgress);
 	UnrealPakSlowTask.MakeDialog();
 
+	TArray<FString> DeletedFiles;
+	{
+		for (const auto& File : VersionDiffInfo.DeleteExternalFiles)
+		{
+			DeletedFiles.Add(File.MountPath);
+		}
+
+		TArray<FAssetDetail> DeletedAssets;
+		UFLibAssetManageHelperEx::GetAssetDetailsByAssetDependenciesInfo(VersionDiffInfo.DeleteAssetDependInfo, DeletedAssets);
+
+		FString ProjectDir = FPaths::ConvertRelativePathToFull(UKismetSystemLibrary::GetProjectDirectory());
+		for (const auto& Asset : DeletedAssets)
+		{
+			FString LongPackageName;
+			UFLibAssetManageHelperEx::ConvPackagePathToLongPackageName(Asset.mPackagePath, LongPackageName);
+			TArray<FString> ReceiveCookedAssetPath;
+			TArray<FString> ReceiveAssetMountPath;
+			UFLibAssetManageHelperEx::ConvLongPackageNameToCookedPath(ProjectDir, ExportPatchSetting->GetPakTargetPlatformNames()[0], LongPackageName, ReceiveCookedAssetPath, ReceiveAssetMountPath);
+			DeletedFiles.Append(ReceiveAssetMountPath);
+		}
+	}
 	for(const auto& PlatformName :ExportPatchSetting->GetPakTargetPlatformNames())
 	{
 		// PakModeSingleLambda(PlatformName, CurrentVersionSavePath);
@@ -856,7 +878,7 @@ FReply SHotPatcherExportPatch::DoExportPatch()
 			for (const auto& PakFileProxy : PakFileProxys)
 			{
 				FString GeneratedPatchOptions = ExportPatchSetting->GetGeneratePatchCommands();
-				FThread CurrentPakThread(*PakFileProxy.PakSavePath, [/*CurrentPakVersion, */PlatformName, UnrealPakOptions, ReplacePakCommandTexts, PakFileProxy, &Chunk, &PakFilesInfoMap, GeneratedPatchOptions]()
+				FThread CurrentPakThread(*PakFileProxy.PakSavePath, [/*CurrentPakVersion, */PlatformName, UnrealPakOptions, ReplacePakCommandTexts, PakFileProxy, &Chunk, &PakFilesInfoMap, GeneratedPatchOptions,&DeletedFiles]()
 				{
 
 					bool PakCommandSaveStatus = FFileHelper::SaveStringArrayToFile(
@@ -880,13 +902,13 @@ FReply SHotPatcherExportPatch::DoExportPatch()
 							CommandLine.Append(FString::Printf(TEXT(" %s"), *Option));
 						}
 						
+#if USE_PAKFILEUTILITIES_EX
 						if (!GeneratedPatchOptions.IsEmpty())
 						{
 							UE_LOG(LogTemp, Log, TEXT("Generated Patch Options:%s"), *GeneratedPatchOptions);
 							CommandLine.Append(FString::Printf(TEXT(" %s"), *GeneratedPatchOptions));
 						}
-#if USE_PAKFILEUTILITIES_EX
-						ExecuteUnrealPakEx(*CommandLine);
+						ExecuteUnrealPakEx(*CommandLine, DeletedFiles);
 #else
 						ExecuteUnrealPak(*CommandLine);
 #endif

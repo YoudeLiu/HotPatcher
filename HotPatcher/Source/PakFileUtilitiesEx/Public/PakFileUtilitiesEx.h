@@ -2,5 +2,5 @@
 
 #include "CoreMinimal.h"
 
-PAKFILEUTILITIESEX_API bool ExecuteUnrealPakEx(const TCHAR* CmdLine);
+PAKFILEUTILITIESEX_API bool ExecuteUnrealPakEx(const TCHAR* CmdLine, const TArray<FString>& InDeleteFiles = TArray<FString>{});
 
